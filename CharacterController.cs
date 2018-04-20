@@ -2,22 +2,23 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class CharacterController : MonoBehaviour {
+public class CharacterController : MonoBehaviour
+{
 
-	private float x;
-	private float y;
-	private float z;
+    private float x;
+    private float y;
+    private float z;
 
-	private bool isGrounded;
+    private bool isGrounded;
     private bool isCollide;
 
-	private float togr;
+    private float togr;
 
-	public float speed = 10.0F;
-	public float jumpf = 300.0F;
-	public float gravity = -1.0F; 
+    public float speed = 10.0F;
+    public float jumpf = 300.0F;
+    public float gravity = -1.0F;
 
-	public Rigidbody rb;
+    public Rigidbody rb;
 
     public float peak;
 
@@ -25,25 +26,42 @@ public class CharacterController : MonoBehaviour {
 
     public float height;
 
+    //code for crouching
+    private float crouchHeight;
+    private float standarHeight;
+    private Vector3 cameraPos;
+    private GameObject camara;
+    private Vector3 cameraCpos;
+    private CharacterController controller;
 
-	// Use this for initialization
-	void Start () {
+    // Use this for initialization
+    void Start()
+    {
 
         ph = GetComponent<PlayerHealth>();
 
-		Cursor.lockState = CursorLockMode.Locked;
+        Cursor.lockState = CursorLockMode.Locked;
 
-		rb = GetComponent<Rigidbody> ();
+        rb = GetComponent<Rigidbody>();
 
-		Physics.gravity = new Vector3 (0, gravity, 0);
+        Physics.gravity = new Vector3(0, gravity, 0);
 
         height = transform.localScale.y;
 
+        //code for crouching
+        camara = GameObject.FindGameObjectWithTag("MainCamera");
+        //controller = GetComponent(); //this line does not work yet
+        standarHeight = controller.height;
+        crouchHeight = standarHeight / 2.5f;
+        cameraPos = camara.transform.localPosition;
+        cameraCpos = new Vector3(cameraPos.x, cameraPos.y / 2, cameraPos.z);
 
-	}
-	
-	// Update is called once per frame
-	void Update () {
+
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
 
         if (Input.GetKeyDown("space") && (isGrounded))
         {
@@ -53,27 +71,40 @@ public class CharacterController : MonoBehaviour {
         {
             Cursor.lockState = CursorLockMode.None;
         }
-	}
 
-	void FixedUpdate (){
-		float translation = Input.GetAxis ("Vertical") * speed;
-		float straffe = Input.GetAxis ("Horizontal") * speed;
-		translation *= Time.deltaTime;
-		straffe *= Time.deltaTime;
+        // code for crouching
+        if (Input.GetKey(KeyCode.C))
+        {
+            Crouching();
+        }
+        if (Input.GetKeyUp(KeyCode.C))
+        {
+            GetUp();
+        }
+    }
 
-		transform.Translate (straffe, 0, translation);
+    void FixedUpdate()
+    {
+        float translation = Input.GetAxis("Vertical") * speed;
+        float straffe = Input.GetAxis("Horizontal") * speed;
+        translation *= Time.deltaTime;
+        straffe *= Time.deltaTime;
+
+        transform.Translate(straffe, 0, translation);
 
         Grounded();
         FallDamage();
-        
+
     }
 
-    void OnCollisionStay(Collision coll){
-		isCollide = true;
-	}
-	void OnCollisionExit(Collision coll){
+    void OnCollisionStay(Collision coll)
+    {
+        isCollide = true;
+    }
+    void OnCollisionExit(Collision coll)
+    {
         isCollide = false;
-	}
+    }
 
     private void Grounded()
     {
@@ -94,44 +125,44 @@ public class CharacterController : MonoBehaviour {
         Ray gr_rt = new Ray(jmp_rt, Vector3.down);
         if (Physics.Raycast(grounder, out hit, 500))
         {
-         //   print("ctr");
-            if (hit.distance > (height+.1f)) { isGrounded = false; }
+            //   print("ctr");
+            if (hit.distance > (height + .1f)) { isGrounded = false; }
             else { isGrounded = true; }
         }
-        
+
         if (Physics.Raycast(gr_fd, out hf, 500))
         {
-         //   print("fwd");
+            //   print("fwd");
             if (hf.distance > (height + .1f)) { isGrounded = false; }
             else { isGrounded = true; }
         }
         if (Physics.Raycast(gr_bk, out hb, 500))
         {
-        //    print("bck");
+            //    print("bck");
             if (hb.distance > (height + .1f)) { isGrounded = false; }
             else { isGrounded = true; }
         }
         if (Physics.Raycast(gr_lt, out hl, 500))
         {
-         //   print("lft");
+            //   print("lft");
             if (hl.distance > (height + .1f)) { isGrounded = false; }
             else { isGrounded = true; }
         }
         if (Physics.Raycast(gr_rt, out hr, 500))
         {
-         //   print("rgt");
+            //   print("rgt");
             if (hr.distance > (height + .1f)) { isGrounded = false; }
             else { isGrounded = true; }
         }
-    //    print(isGrounded);
-       // print(hit.distance);
+        //    print(isGrounded);
+        // print(hit.distance);
     }
 
     void FallDamage()
     {
         if (!isGrounded)
         {
-          //  print("airborne");
+            //  print("airborne");
             if (peak < transform.position.y)
             {
                 peak = transform.position.y;
@@ -139,7 +170,7 @@ public class CharacterController : MonoBehaviour {
         }
         else
         {
-          //  print("grounded");
+            //  print("grounded");
             if ((peak - transform.position.y) > 30)
             {
                 int dmg = Mathf.RoundToInt((peak - transform.position.y) * 2);
@@ -148,7 +179,7 @@ public class CharacterController : MonoBehaviour {
             }
             else if ((peak - transform.position.y) > 10)
             {
-                int dmg = Mathf.RoundToInt((peak - transform.position.y)*.5f);
+                int dmg = Mathf.RoundToInt((peak - transform.position.y) * .5f);
                 ph.Damage(dmg, transform.position);
                 peak = transform.position.y;
             }
@@ -158,5 +189,22 @@ public class CharacterController : MonoBehaviour {
             }
         }
     }
+    void Crouching()
+    {
+        if (controller.isGrounded)
+        {
+            controller.height = crouchHeight;
+            //controller.center = new Vector3(0f, -0.5f, 0f); // .center cannot found
+            camara.transform.localPosition = cameraCpos;
+        }
+    }
 
+    void GetUp()
+    {
+
+        transform.position = new Vector3(transform.position.x, transform.position.y + 0.3f, transform.position.z);
+        //controller.center = new Vector3(0f, 0f, 0f); // .center cannot found
+        controller.height = standarHeight;
+        camara.transform.localPosition = cameraPos;
+    }
 }
